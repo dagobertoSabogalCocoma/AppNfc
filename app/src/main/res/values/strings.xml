@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">AppServicioSala</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Settings</string>
+    <string name="explanation">¡ El servicio de NFC se encuentra desactivado!</string>
+    <string name="explanation1">¡ El servicio de NFC esta activo!</string>
+    <string name="msmBienvenida">XXXXXXXXXXXXXXXXX</string>
+
+
+</resources>
