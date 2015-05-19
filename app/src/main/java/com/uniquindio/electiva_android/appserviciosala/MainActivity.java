@@ -4,6 +4,8 @@ import android.app.Activity;
 import android.app.PendingIntent;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
 import android.nfc.NfcAdapter;
@@ -12,8 +14,9 @@ import android.nfc.tech.Ndef;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -25,8 +28,20 @@ public class MainActivity extends Activity {
 
     public static final String MIME_TEXT_PLAIN = "text/plain";
     public static final String TAG = "NfcDemo";
+
     private TextView mTextView;
     private NfcAdapter mNfcAdapter;
+
+    private String resultadoLectura;
+    private EditText cod;
+    private String codigo;
+    private TextView respuesta;
+    private Button registrar;
+    private Button ingresar;
+    private String codBase;
+
+    private PruebaSQLiteHelper usdbh;
+    private SQLiteDatabase db;
 
 
     @Override
@@ -37,6 +52,13 @@ public class MainActivity extends Activity {
         mTextView = (TextView) findViewById(R.id.textView_explanation);
         mNfcAdapter = NfcAdapter.getDefaultAdapter(this);
 
+        respuesta=(TextView) findViewById(R.id.txtRespuesta);
+
+        usdbh = new PruebaSQLiteHelper(this, "PruebaDB", null, 1);
+        db = usdbh.getWritableDatabase();
+
+
+
         if (mNfcAdapter == null) {
             // Stop here, we definitely need NFC
             Toast.makeText(this, "This device doesn't support NFC.", Toast.LENGTH_LONG).show();
@@ -45,12 +67,35 @@ public class MainActivity extends Activity {
         }
 
         if (!mNfcAdapter.isEnabled()) {
-            mTextView.setText(R.string.explanation);
+            //mTextView.setText(R.string.explanation);
             Toast.makeText(this,R.string.explanation , Toast.LENGTH_LONG).show();
         } else {
-            mTextView.setText(R.string.explanation1);
+           // mTextView.setText(R.string.explanation1);
             Toast.makeText(this,R.string.explanation1 , Toast.LENGTH_LONG).show();
         }
+
+        registrar=(Button) findViewById(R.id.btnRegistrar);
+        registrar.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                cod=(EditText)findViewById(R.id.txtCodigo);
+                codigo=cod.getText().toString();
+                cod.setText("");
+                insert(codigo);
+            }
+        });
+
+        ingresar=(Button) findViewById(R.id.btnIngresar);
+        ingresar.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                getInfoDB();
+                comparación();
+
+            }
+        });
 
         handleIntent(getIntent());
     }
@@ -146,29 +191,6 @@ public class MainActivity extends Activity {
         adapter.disableForegroundDispatch(activity);
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
-
-
    private class NdefReaderTask extends AsyncTask<Tag, Void, String> {
 
        @Override
@@ -228,10 +250,40 @@ public class MainActivity extends Activity {
        @Override
        protected void onPostExecute(String result) {
            if (result != null) {
-
-               mTextView.setText("Read content: " + result);
+              resultadoLectura=result;
+              mTextView.setText( "El texto del TAG es:  " + result);
            }
        }
 
    }
+
+    private void insert(String cO){
+
+        db.execSQL("INSERT INTO PruebaDB (CODIGO)" + "VALUES ( '"+cO+"' )");
+        Toast.makeText(this,"Registro exitoso", Toast.LENGTH_LONG).show();
+    }
+
+    public void getInfoDB() {
+        String[] fields = new String[] {"CODIGO"};
+       Cursor c;
+
+       c= db.query("PruebaDB", fields, null,null,null,null,null);
+
+        if (c.moveToFirst()) {
+            do {
+                codBase = c.getString(0);
+               }
+            while(c.moveToNext()); }
+    }
+
+
+    public void comparación(){
+
+        if(resultadoLectura.equals(codBase)){
+            respuesta.setText(R.string.ingreso);
+        }else{
+
+            respuesta.setText(R.string.rechazado);
+        }
+    }
 }
